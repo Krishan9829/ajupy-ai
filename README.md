@@ -10,6 +10,7 @@ AI SaaS Platform built with Next.js, OpenAI, and Supabase.
 
 ## Getting Started
 
+
 ```bash
 npm install
 npm run dev
