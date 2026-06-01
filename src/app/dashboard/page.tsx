@@ -1,105 +1,91 @@
 "use client";
 
-import { useState } from "react";
-import Sidebar from "../../components/layout/sidebar";
+import Link from "next/link";
+
+const modules = [
+  {
+    title: "Saree Design AI",
+    path: "/saree-ai",
+    desc: "Generate full saree designs",
+    icon: "👗",
+  },
+  {
+    title: "Textile Print AI",
+    path: "/textile-ai",
+    desc: "Create seamless patterns",
+    icon: "🎨",
+  },
+  {
+    title: "Embroidery AI",
+    path: "/embroidery-ai",
+    desc: "Generate embroidery layouts",
+    icon: "🧵",
+  },
+  {
+    title: "Color Intelligence",
+    path: "/color-ai",
+    desc: "Trending palettes & insights",
+    icon: "🌈",
+  },
+  {
+    title: "Pattern Generator",
+    path: "/pattern-ai",
+    desc: "Tile & repeat patterns",
+    icon: "🔁",
+  },
+  {
+    title: "AI Models",
+    path: "/ai-models",
+    desc: "Manage models",
+    icon: "🤖",
+  },
+  {
+    title: "AI Workflow",
+    path: "/workflow",
+    desc: "Understand AI pipeline",
+    icon: "⚙️",
+  },
+  {
+    title: "Training Studio",
+    path: "/training",
+    desc: "Train your own AI models",
+    icon: "🧠",
+  },
+];
 
 export default function DashboardPage() {
-  const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function generateAI() {
-    if (!prompt) return;
-
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-        }),
-      });
-
-      const data = await res.json();
-     setResponse(
-  JSON.stringify(data, null, 2)
-);
-await fetch("/api/save-prompt", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    prompt,
-    response: data.result,
-  }),
-});
-     } catch (error) {
-      console.error(error);
-      setResponse("Something went wrong");
-    }
-
-    setLoading(false);
-  }
-
   return (
-    <div className="flex min-h-screen bg-black text-white">
-      <Sidebar />
+    <main className="flex-1 p-8 bg-black text-white">
+      {/* HEADER */}
+      <h1 className="text-4xl font-bold mb-2">
+        🚀 AJUPY AI Dashboard
+      </h1>
 
-      <main className="flex-1 ml-[260px] p-8">
-        <h1 className="text-4xl font-bold mb-8">
-          AJUPY AI Dashboard
-        </h1>
+      <p className="text-gray-400 mb-8">
+        World's First AI Textile Operating System
+      </p>
 
-        <div className="grid md:grid-cols-3 gap-5 mb-8">
-          <div className="bg-gray-900 p-6 rounded-xl">
-            Total Designs
-          </div>
+      {/* GRID */}
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {modules.map((item, i) => (
+          <Link key={i} href={item.path}>
+            <div className="bg-gray-900 hover:bg-gray-800 transition p-6 rounded-xl cursor-pointer group">
+              
+              <div className="text-3xl mb-3 group-hover:scale-110 transition">
+                {item.icon}
+              </div>
 
-          <div className="bg-gray-900 p-6 rounded-xl">
-            AI Credits
-          </div>
+              <h2 className="text-xl font-semibold">
+                {item.title}
+              </h2>
 
-          <div className="bg-gray-900 p-6 rounded-xl">
-            Collections
-          </div>
-        </div>
-
-        <div className="bg-gray-900 p-6 rounded-xl">
-          <h2 className="text-2xl font-semibold mb-4">
-            AI Generator
-          </h2>
-
-          <textarea
-            className="w-full h-40 p-4 rounded-lg bg-gray-800 border border-gray-700"
-            placeholder="Describe what you want AI to generate..."
-            value={prompt}
-            onChange={(e) =>
-              setPrompt(e.target.value)
-            }
-          />
-
-          <button
-            onClick={generateAI}
-            disabled={loading}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg"
-          >
-            {loading
-              ? "Generating..."
-              : "Generate"}
-          </button>
-
-          {response && (
-            <div className="mt-6 bg-gray-800 p-5 rounded-lg whitespace-pre-wrap">
-              {response}
+              <p className="text-gray-400 mt-2 text-sm">
+                {item.desc}
+              </p>
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+          </Link>
+        ))}
+      </div>
+    </main>
   );
 }
