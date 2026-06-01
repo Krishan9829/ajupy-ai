@@ -1,61 +1,105 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
+import ImageCard from "../../components/ai/image-card";
+
+type Collection = {
+  id: number;
+  image: string;
+  prompt: string;
+  created_at?: string;
+};
 
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  
-  const fetchCollections = async () => {
-    try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/collections?select=*&order=id.desc`,
-        {
-          headers: {
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-          },
-        }
-      );
-
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setCollections(data);
-      } else {
-        setCollections([]);
-        console.error("Invalid data from Supabase:", data);
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setCollections([]);
-      setLoading(false);
-    }
-  };
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchCollections();
   }, []);
 
-  return (
-    <div>
-      <h1>Collections</h1>
+  const fetchCollections = async () => {
+    try {
+      if (!supabase) {
+        console.error("Supabase not initialized");
+        setCollections([]);
+        return;
+      }
 
-      {loading ? (
-        <p>Loading...</p>
+      const { data, error } = await supabase
+        .from("collections")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        setCollections([]);
+      } else {
+        setCollections((data || []) as Collection[]);
+      }
+    } catch (err) {
+      console.error(err);
+      setCollections([]);
+    }
+
+    setLoading(false);
+  };
+
+  // 🔍 SEARCH FILTER
+  const filtered = collections.filter((item) =>
+    item.prompt.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="ml-[240px] p-6">
+        <p className="animate-pulse text-gray-500">
+          Loading your designs...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ml-[240px] p-6">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">
+          🗂️ Your Collections
+        </h1>
+
+        <input
+          type="text"
+          placeholder="Search designs..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* STATS */}
+      <p className="text-sm text-gray-500 mb-4">
+        Total Designs: {collections.length}
+      </p>
+
+      {/* EMPTY STATE */}
+      {filtered.length === 0 ? (
+        <div className="text-center mt-10 text-gray-500">
+          <p>No designs found.</p>
+          <p className="text-sm">
+            Try generating some designs first 👗
+          </p>
+        </div>
       ) : (
-        (Array.isArray(collections) ? collections : []).map((item: any) => (
-          <div key={item.id}>
-            <h3>{item.title}</h3>
-            <p>{item.content}</p>
-          </div>
-        ))
+        /* GRID */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          {filtered.map((item) => (
+            <ImageCard key={item.id} img={item} />
+          ))}
+        </div>
       )}
     </div>
   );
