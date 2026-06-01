@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { getSupabase } from "../../lib/supabase"; // ✅ FIXED
 import { useRouter } from "next/navigation";
 
 export default function SignupForm() {
@@ -13,13 +13,16 @@ export default function SignupForm() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // ✅ CREATE INSTANCE
+  const supabase = getSupabase();
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
 
     setErrorMsg("");
     setSuccessMsg("");
 
-    // ✅ basic validation
+    // ✅ validation
     if (!email || !password) {
       setErrorMsg("Please fill all fields");
       return;
@@ -30,7 +33,7 @@ export default function SignupForm() {
       return;
     }
 
-    // ✅ supabase safe check
+    // ✅ safety check
     if (!supabase) {
       setErrorMsg("Server not ready. Try again later.");
       return;
@@ -50,12 +53,10 @@ export default function SignupForm() {
       return;
     }
 
-    // ✅ success message
     setSuccessMsg(
       "Account created! Check your email for verification."
     );
 
-    // redirect after 2 sec
     setTimeout(() => {
       router.push("/auth/login");
     }, 2000);
@@ -84,7 +85,6 @@ export default function SignupForm() {
         </p>
       )}
 
-      {/* EMAIL */}
       <input
         className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-green-500"
         type="email"
@@ -93,7 +93,6 @@ export default function SignupForm() {
         onChange={(e) => setEmail(e.target.value)}
       />
 
-      {/* PASSWORD */}
       <input
         className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-green-500"
         type="password"
@@ -102,7 +101,6 @@ export default function SignupForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      {/* BUTTON */}
       <button
         type="submit"
         disabled={loading}
@@ -111,7 +109,6 @@ export default function SignupForm() {
         {loading ? "Creating Account..." : "Sign Up"}
       </button>
 
-      {/* LOGIN LINK */}
       <p className="text-center text-gray-400">
         Already have an account?{" "}
         <a

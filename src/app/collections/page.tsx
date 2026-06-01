@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { getSupabase } from "../../lib/supabase";
 import ImageCard from "../../components/ai/image-card";
 
 type Collection = {
@@ -16,15 +16,20 @@ export default function CollectionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // ✅ FIX: create supabase instance
+  const supabase = getSupabase();
+
   useEffect(() => {
     fetchCollections();
   }, []);
 
   const fetchCollections = async () => {
     try {
+      // ✅ safety check
       if (!supabase) {
-        console.error("Supabase not initialized");
+        console.error("❌ Supabase not initialized");
         setCollections([]);
+        setLoading(false);
         return;
       }
 
@@ -49,9 +54,10 @@ export default function CollectionsPage() {
 
   // 🔍 SEARCH FILTER
   const filtered = collections.filter((item) =>
-    item.prompt.toLowerCase().includes(search.toLowerCase())
+    item.prompt?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ⏳ LOADING UI
   if (loading) {
     return (
       <div className="ml-[240px] p-6">
