@@ -1,20 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// Env variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+let supabaseInstance: SupabaseClient | null = null;
 
-// Create client ONLY if env exists (prevents build crash)
-export const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey)
-    : null;
+export function getSupabase(): SupabaseClient | null {
+  if (supabaseInstance) return supabaseInstance;
 
-// Optional helper (safe check)
-export function getSupabase() {
-  if (!supabase) {
-    console.error("❌ Supabase not initialized. Check env variables.");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    console.warn("⚠️ Supabase not initialized (frontend)");
     return null;
   }
-  return supabase;
+
+  supabaseInstance = createClient(url, key);
+
+  return supabaseInstance;
 }

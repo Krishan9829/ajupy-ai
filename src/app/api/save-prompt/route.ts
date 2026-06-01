@@ -1,11 +1,34 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../lib/supabase-admin";
+import { createClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
     const { prompt, response } = await req.json();
 
-    const { data, error } = await supabaseAdmin
+    if (!prompt || !response) {
+      return NextResponse.json(
+        { error: "Missing fields" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ Safe ENV access
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      console.error("❌ ENV missing");
+      return NextResponse.json(
+        { error: "Server config error" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(url, key);
+
+    const { data, error } = await supabase
       .from("prompt_history")
       .insert([
         {
@@ -15,25 +38,18 @@ export async function POST(req: Request) {
       ])
       .select();
 
-    if (error) {
-      console.error(error);
-
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
       data,
     });
-  } catch (error: any) {
-    console.error(error);
+  } catch (err: any) {
+    console.error(err);
 
     return NextResponse.json(
       {
-        error: error?.message,
+        error: err.message || "Server error",
       },
       { status: 500 }
     );

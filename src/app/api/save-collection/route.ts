@@ -1,24 +1,32 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-
-    const title = body.title;
-    const content = body.content;
+    const { title, content, image } = await req.json();
 
     if (!title || !content) {
       return NextResponse.json(
-        { error: "Title and content are required" },
+        { error: "Title & content required" },
         { status: 400 }
       );
     }
+
+    // ✅ ENV (safe access)
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+      console.error("❌ Supabase ENV missing");
+      return NextResponse.json(
+        { error: "Server config error" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(url, key);
 
     const { data, error } = await supabase
       .from("collections")
@@ -26,25 +34,25 @@ export async function POST(req: Request) {
         {
           title,
           content,
+          image: image || null,
         },
       ])
-      .select("*")
+      .select()
       .single();
 
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       success: true,
       collection: data,
     });
-  } catch (error: any) {
+  } catch (err: any) {
+    console.error(err);
+
     return NextResponse.json(
-      { error: error.message || "Server error" },
+      {
+        error: err.message || "Server error",
+      },
       { status: 500 }
     );
   }
