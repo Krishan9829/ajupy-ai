@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { getSupabase } from "../../lib/supabase"; // ✅ FIX
 import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
@@ -12,16 +12,21 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // ✅ CREATE INSTANCE
+  const supabase = getSupabase();
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
 
     setErrorMsg("");
 
+    // ✅ validation
     if (!email || !password) {
       setErrorMsg("Please fill all fields");
       return;
     }
 
+    // ✅ safety
     if (!supabase) {
       setErrorMsg("Server not ready. Try again later.");
       return;
@@ -54,14 +59,13 @@ export default function LoginForm() {
         Login to AJUPY AI
       </h2>
 
-      {/* ERROR MESSAGE */}
+      {/* ERROR */}
       {errorMsg && (
         <p className="text-red-500 text-sm text-center">
           {errorMsg}
         </p>
       )}
 
-      {/* EMAIL */}
       <input
         className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
         type="email"
@@ -70,7 +74,6 @@ export default function LoginForm() {
         onChange={(e) => setEmail(e.target.value)}
       />
 
-      {/* PASSWORD */}
       <input
         className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
         type="password"
@@ -79,7 +82,6 @@ export default function LoginForm() {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      {/* BUTTON */}
       <button
         type="submit"
         disabled={loading}
@@ -88,7 +90,6 @@ export default function LoginForm() {
         {loading ? "Logging in..." : "Login"}
       </button>
 
-      {/* SIGNUP LINK */}
       <p className="text-center text-gray-400">
         Don't have an account?{" "}
         <a
