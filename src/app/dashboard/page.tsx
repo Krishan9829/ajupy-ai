@@ -28,7 +28,7 @@ export default function DashboardPage() {
       const { data } = await supabase.auth.getUser();
 
       if (!data.user) {
-        router.replace("/auth/login");
+        router.replace("/auth");
         return;
       }
 
@@ -37,7 +37,8 @@ export default function DashboardPage() {
     };
 
     checkAuth();
-  }, [router]);
+  }, []);
+  
 
   // 🔥 LOGOUT FUNCTION
   async function handleLogout() {
