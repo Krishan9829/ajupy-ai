@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../../lib/supabase-admin";
+import { supabaseAdmin } from "../../lib/supabaseAdmin";
 import Sidebar from "../../components/layout/sidebar";
 
 export default async function HistoryPage() {
