@@ -1,91 +1,156 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getSupabase } from "../../lib/supabase";
 
 const modules = [
-  {
-    title: "Saree Design AI",
-    path: "/saree-ai",
-    desc: "Generate full saree designs",
-    icon: "👗",
-  },
-  {
-    title: "Textile Print AI",
-    path: "/textile-ai",
-    desc: "Create seamless patterns",
-    icon: "🎨",
-  },
-  {
-    title: "Embroidery AI",
-    path: "/embroidery-ai",
-    desc: "Generate embroidery layouts",
-    icon: "🧵",
-  },
-  {
-    title: "Color Intelligence",
-    path: "/color-ai",
-    desc: "Trending palettes & insights",
-    icon: "🌈",
-  },
-  {
-    title: "Pattern Generator",
-    path: "/pattern-ai",
-    desc: "Tile & repeat patterns",
-    icon: "🔁",
-  },
-  {
-    title: "AI Models",
-    path: "/ai-models",
-    desc: "Manage models",
-    icon: "🤖",
-  },
-  {
-    title: "AI Workflow",
-    path: "/workflow",
-    desc: "Understand AI pipeline",
-    icon: "⚙️",
-  },
-  {
-    title: "Training Studio",
-    path: "/training",
-    desc: "Train your own AI models",
-    icon: "🧠",
-  },
-];
+  { title: "Saree AI", path: "/saree-ai", icon: "👗" },
+  { title: "Textile AI", path: "/textile-ai", icon: "🎨" },
+  { title: "Embroidery AI", path: "/embroidery-ai", icon: "🧵" },
+  { title: "Color AI", path: "/color-ai", icon: "🌈" },
+  { title: "Pattern AI", path: "/pattern-ai", icon: "🔁" },
+  { title: "Training Studio", path: "/training", icon: "🧠" },
+]; 
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [credits, setCredits] = useState(100);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = getSupabase();
+
+      const { data } = await supabase.auth.getUser();
+
+      if (!data.user) {
+        router.replace("/auth/login");
+        return;
+      }
+
+      setUser(data.user);
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // 🔥 LOGOUT FUNCTION
+  async function handleLogout() {
+    const supabase = getSupabase();
+    await supabase.auth.signOut();
+    router.replace("/auth/login");
+  }
+
+  // 🔥 LOADING SCREEN
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <p className="animate-pulse text-lg">
+          Checking authentication...
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <main className="flex-1 p-8 bg-black text-white">
+    <div className="min-h-screen bg-black text-white p-8">
+
       {/* HEADER */}
-      <h1 className="text-4xl font-bold mb-2">
-        🚀 AJUPY AI Dashboard
-      </h1>
+      <div className="flex justify-between items-center">
 
-      <p className="text-gray-400 mb-8">
-        World's First AI Textile Operating System
-      </p>
+        <div>
+          <h1 className="text-5xl font-bold">
+            🚀 AJUPY AI Dashboard
+          </h1>
 
-      {/* GRID */}
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {modules.map((item, i) => (
-          <Link key={i} href={item.path}>
-            <div className="bg-gray-900 hover:bg-gray-800 transition p-6 rounded-xl cursor-pointer group">
-              
-              <div className="text-3xl mb-3 group-hover:scale-110 transition">
-                {item.icon}
-              </div>
+          <p className="text-zinc-400 mt-2 max-w-xl">
+            World's First AI Operating System for Fashion,
+            Textile & Manufacturing Industries
+          </p>
 
-              <h2 className="text-xl font-semibold">
-                {item.title}
-              </h2>
+          <p className="text-green-400 mt-3 text-sm">
+            Logged in as: {user?.email}
+          </p>
+        </div>
 
-              <p className="text-gray-400 mt-2 text-sm">
-                {item.desc}
-              </p>
+        {/* ACTIONS */}
+        <div className="flex items-center gap-4">
+
+          <div className="bg-zinc-900 border border-zinc-800 px-5 py-3 rounded-xl">
+            Credits: {credits}
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 px-4 py-2 rounded-xl hover:bg-red-700"
+          >
+            Logout
+          </button>
+
+        </div>
+      </div>
+
+      {/* QUICK STATS */}
+      <div className="grid md:grid-cols-3 gap-4 mt-10">
+
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
+          <p className="text-zinc-400 text-sm">
+            Total Generations
+          </p>
+          <h2 className="text-2xl font-bold mt-2">
+            24
+          </h2>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
+          <p className="text-zinc-400 text-sm">
+            Credits Remaining
+          </p>
+          <h2 className="text-2xl font-bold mt-2">
+            {credits}
+          </h2>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
+          <p className="text-zinc-400 text-sm">
+            Active Model
+          </p>
+          <h2 className="text-2xl font-bold mt-2">
+            FLUX Pro
+          </h2>
+        </div>
+
+      </div>
+
+      {/* MODULES */}
+      <div className="grid md:grid-cols-3 gap-6 mt-10">
+        {modules.map((module) => (
+          <Link
+            key={module.title}
+            href={module.path}
+            className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 
+                       hover:border-white hover:scale-105 transition-all duration-300"
+          >
+            <div className="text-4xl group-hover:scale-110 transition">
+              {module.icon}
             </div>
+
+            <h3 className="text-xl font-semibold mt-4">
+              {module.title}
+            </h3>
+
+            <p className="text-zinc-400 mt-2">
+              Launch AI module
+            </p>
           </Link>
         ))}
       </div>
-    </main>
+
+    </div>
   );
 }

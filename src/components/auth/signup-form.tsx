@@ -1,123 +1,166 @@
 "use client";
 
 import { useState } from "react";
-import { getSupabase } from "../../lib/supabase"; // ✅ FIXED
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSupabase } from "../../lib/supabase";
 
 export default function SignupForm() {
-  const router = useRouter();
+const router = useRouter();
+const supabase = getSupabase();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
 
-  // ✅ CREATE INSTANCE
-  const supabase = getSupabase();
+const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
+const [loading, setLoading] = useState(false);
+const [errorMsg, setErrorMsg] = useState("");
+const [successMsg, setSuccessMsg] = useState("");
 
-    setErrorMsg("");
-    setSuccessMsg("");
+async function handleSignup(e: React.FormEvent) {
+e.preventDefault();
 
-    // ✅ validation
-    if (!email || !password) {
-      setErrorMsg("Please fill all fields");
-      return;
-    }
 
-    if (password.length < 6) {
-      setErrorMsg("Password must be at least 6 characters");
-      return;
-    }
+setErrorMsg("");
+setSuccessMsg("");
 
-    // ✅ safety check
-    if (!supabase) {
-      setErrorMsg("Server not ready. Try again later.");
-      return;
-    }
+if (!email || !password || !confirmPassword) {
+  setErrorMsg("Please fill all fields.");
+  return;
+}
 
-    setLoading(true);
+if (password.length < 6) {
+  setErrorMsg("Password must be at least 6 characters.");
+  return;
+}
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+if (password !== confirmPassword) {
+  setErrorMsg("Passwords do not match.");
+  return;
+}
 
-    setLoading(false);
+try {
+  setLoading(true);
 
-    if (error) {
-      setErrorMsg(error.message);
-      return;
-    }
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
 
-    setSuccessMsg(
-      "Account created! Check your email for verification."
-    );
-
-    setTimeout(() => {
-      router.push("/auth/login");
-    }, 2000);
+  if (error) {
+    setErrorMsg(error.message);
+    return;
   }
 
-  return (
-    <form
-      onSubmit={handleSignup}
-      className="flex flex-col gap-4 w-full max-w-md mx-auto"
-    >
-      <h2 className="text-xl font-bold text-center text-white">
-        Create your account
-      </h2>
+  setSuccessMsg(
+    "Account created successfully. Check your email for verification."
+  );
 
-      {/* ERROR */}
-      {errorMsg && (
-        <p className="text-red-500 text-sm text-center">
-          {errorMsg}
-        </p>
-      )}
+  setTimeout(() => {
+    router.push("/login");
+  }, 2500);
+} catch (err) {
+  console.error(err);
+  setErrorMsg("Something went wrong.");
+} finally {
+  setLoading(false);
+}
 
-      {/* SUCCESS */}
-      {successMsg && (
-        <p className="text-green-500 text-sm text-center">
-          {successMsg}
-        </p>
-      )}
 
+}
+
+const passwordStrength =
+password.length >= 10
+? "Strong"
+: password.length >= 6
+? "Medium"
+: "Weak";
+
+return ( <div className="space-y-6">
+{errorMsg && ( <div className="bg-red-500/10 border border-red-500 rounded-lg p-3"> <p className="text-red-400 text-sm text-center">
+{errorMsg} </p> </div>
+)}
+
+
+  {successMsg && (
+    <div className="bg-green-500/10 border border-green-500 rounded-lg p-3">
+      <p className="text-green-400 text-sm text-center">
+        {successMsg}
+      </p>
+    </div>
+  )}
+
+  <form
+    onSubmit={handleSignup}
+    className="flex flex-col gap-4"
+  >
+    <input
+      type="email"
+      placeholder="Email Address"
+      autoComplete="email"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-white"
+    />
+
+    <div className="relative">
       <input
-        className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-green-500"
-        type="email"
-        placeholder="Enter Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-
-      <input
-        className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-green-500"
-        type="password"
+        type={showPassword ? "text" : "password"}
         placeholder="Create Password"
         value={password}
+        autoComplete="new-password"
         onChange={(e) => setPassword(e.target.value)}
+        className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-white"
       />
 
       <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-green-600 hover:bg-green-700 transition p-3 rounded-lg font-semibold text-white disabled:opacity-50"
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-3 text-sm text-zinc-400"
       >
-        {loading ? "Creating Account..." : "Sign Up"}
+        {showPassword ? "Hide" : "Show"}
       </button>
+    </div>
 
-      <p className="text-center text-gray-400">
-        Already have an account?{" "}
-        <a
-          href="/auth/login"
-          className="text-blue-400 hover:underline"
-        >
-          Login
-        </a>
-      </p>
-    </form>
-  );
+    <p className="text-sm text-zinc-400">
+      Password Strength: {passwordStrength}
+    </p>
+
+    <input
+      type={showPassword ? "text" : "password"}
+      placeholder="Confirm Password"
+      autoComplete="new-password"
+      value={confirmPassword}
+      onChange={(e) =>
+        setConfirmPassword(e.target.value)
+      }
+      className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-white"
+    />
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="bg-white text-black font-semibold rounded-xl p-3 hover:opacity-90 transition disabled:opacity-50"
+    >
+      {loading
+        ? "Creating Account..."
+        : "Create Account"}
+    </button>
+  </form>
+
+  <p className="text-center text-zinc-400">
+    Already have an account?{" "}
+    <Link
+      href="/login"
+      className="text-white font-semibold hover:underline"
+    >
+      Login
+    </Link>
+  </p>
+</div>
+
+
+);
 }

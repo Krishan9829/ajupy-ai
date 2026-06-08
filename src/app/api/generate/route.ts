@@ -1,3 +1,4 @@
+console.log("USE_DEMO VALUE:", process.env.USE_DEMO);
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
@@ -5,104 +6,95 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 });
 
-const USE_DEMO = true; // 🔥 toggle this ON/OFF
+const USE_DEMO = process.env.USE_DEMO === "true";
+
+// timeout helper
+const withTimeout = (promise: Promise<any>, ms = 20000) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), ms)
+    ),
+  ]);
+};
 
 export async function POST(req: Request) {
   try {
-    const { prompt, style } = await req.json();
+    const body = await req.json();
+    let { prompt, style } = body;
 
     if (!prompt) {
       return NextResponse.json(
-        { success: false, error: "Prompt is required" },
+        { success: false, error: "Prompt required" },
         { status: 400 }
       );
     }
 
-    const finalStyle = style || "luxury bridal";
+    prompt = prompt.toString().trim().slice(0, 300);
+    style = style || "luxury indian bridal";
 
-    // 🎯 Unified Prompt Builder
+    // 🔥 AI prompt
     const enhancedPrompt = `
-You are a world-class Indian textile fashion designer AI.
+You are a world-class fashion designer AI.
 
-Design Type: Saree Concept
-Style: ${finalStyle}
-User Input: ${prompt}
+Create a ${style} saree design.
 
-Include:
-- fabric details
-- embroidery style
-- color palette
-- border design
-- pallu design
-- blouse suggestion
+User idea: ${prompt}
+
+Return:
+1. Fabric
+2. Colors
+3. Embroidery
+4. Border
+5. Pallu
+6. Blouse
 `;
 
-    // ==============================
-    // 🧪 DEMO MODE (NO API COST)
-    // ==============================
+    // 🧪 DEMO MODE
     if (USE_DEMO) {
       return NextResponse.json({
         success: true,
         mode: "demo",
         result: {
-          text: `
-✨ Saree Design (Demo Mode)
-
-Fabric: ${prompt}
-Style: ${finalStyle}
-
-• Premium silk base fabric
-• Handcrafted zari embroidery
-• Royal Mughal inspired border
-• Soft pastel luxury palette
-• Heavy bridal pallu design
-• Matching designer blouse
-          `,
-          image: "",
-          meta: {
-            prompt,
-            style: finalStyle,
-          },
+          text: `Demo design for ${prompt}`,
+          image:
+            "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf",
         },
       });
     }
 
-    // ==============================
-    // 🧠 REAL AI MODE
-    // ==============================
-    let text = "";
+    // 🚀 AI CALL
+    const [textRes, imageRes] = await Promise.all([
+      withTimeout(
+        openai.responses.create({
+          model: "gpt-4.1-mini",
+          input: enhancedPrompt,
+        })
+      ),
+
+      withTimeout(
+        openai.images.generate({
+          model: "gpt-image-1",
+          prompt: `${prompt}, ${style}, indian saree, luxury fashion, 4k`,
+          size: "1024x1024",
+        })
+      ),
+    ]);
+
+    const text =
+      textRes?.output_text || "No design generated";
+
+    const img = imageRes?.data?.[0];
+
     let image = "";
 
-    try {
-      const textRes = await openai.responses.create({
-        model: "gpt-4.1-mini",
-        input: enhancedPrompt,
-      });
+    if (img?.url) image = img.url;
+    else if (img?.b64_json)
+      image = `data:image/png;base64,${img.b64_json}`;
 
-      text = textRes.output_text || "";
-    } catch (err) {
-      console.log("Text error:", err);
-      text = "AI description temporarily unavailable";
-    }
-
-    try {
-      const imagePrompt = `
-Ultra realistic Indian saree design,
-${prompt}, ${finalStyle},
-luxury fashion photography, embroidery details,
-studio lighting, 4k textile render
-`;
-
-      const imgRes = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt: imagePrompt,
-        size: "1024x1024",
-      });
-
-      image = imgRes.data?.[0]?.url || "";
-    } catch (err) {
-      console.log("Image error:", err);
-      image = "";
+    if (!image) {
+      image =
+        "https://via.placeholder.com/512?text=No+Image";
     }
 
     return NextResponse.json({
@@ -111,18 +103,16 @@ studio lighting, 4k textile render
       result: {
         text,
         image,
-        meta: {
-          prompt,
-          style: finalStyle,
-        },
       },
     });
 
-  } catch (error: any) {
+  } catch (err: any) {
+    console.error("API ERROR:", err);
+
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || "Generation failed",
+        error: err.message,
       },
       { status: 500 }
     );

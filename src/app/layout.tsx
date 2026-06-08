@@ -1,10 +1,9 @@
 import "./globals.css";
-import type { Metadata } from "next";
-import Sidebar from "../components/layout/sidebar";
+import { getSupabase } from "../lib/supabase";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "AJUPY AI",
-  description: "AI Powered SaaS Platform",
+  description: "AI Textile Design Platform",
 };
 
 export default function RootLayout({
@@ -12,22 +11,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Initialize Supabase once at app level (safe warm-up)
+  getSupabase();
+
   return (
     <html lang="en">
-      <body className="m-0 p-0">
-        <div className="flex min-h-screen w-full">
-          
-          {/* Sidebar */}
-          <div className="w-[260px] flex-shrink-0">
-            <Sidebar />
-          </div>
-
-          {/* Main Content */}
-          <main className="flex-1 min-w-0 p-6 bg-black text-white">
-            {children}
-          </main>
-
-        </div>
+      <body className="bg-black text-white">
+        {children}
       </body>
     </html>
   );

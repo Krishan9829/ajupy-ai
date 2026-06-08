@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { getSupabase } from "../../lib/supabase"; // ✅ FIX
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSupabase } from "../../lib/supabase";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -11,94 +12,107 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  // ✅ CREATE INSTANCE
-  const supabase = getSupabase();
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
+
+    const supabase = getSupabase();
 
     setErrorMsg("");
 
-    // ✅ validation
     if (!email || !password) {
-      setErrorMsg("Please fill all fields");
+      setErrorMsg("Please fill all fields.");
       return;
     }
+    try {
+      setLoading(true);
 
-    // ✅ safety
-    if (!supabase) {
-      setErrorMsg("Server not ready. Try again later.");
-      return;
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+
+      // ✅ Step 1: ensure session is updated
+      await supabase.auth.getSession();
+
+      // ✅ Step 2: force refresh (IMPORTANT 🔥)
+      router.refresh();
+
+      // ✅ Step 3: redirect
+      router.replace("/dashboard");
+
+    } catch (err) {
+      console.error("LOGIN ERROR:", err);
+      setErrorMsg("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (error) {
-      setErrorMsg(error.message);
-      return;
-    }
-
-    // ✅ success
-    router.push("/dashboard");
   }
 
   return (
-    <form
-      onSubmit={handleLogin}
-      className="flex flex-col gap-4 w-full max-w-md mx-auto"
-    >
-      <h2 className="text-xl font-bold text-center text-white">
-        Login to AJUPY AI
-      </h2>
+    <div className="space-y-6">
 
-      {/* ERROR */}
       {errorMsg && (
-        <p className="text-red-500 text-sm text-center">
-          {errorMsg}
-        </p>
+        <div className="bg-red-500/10 border border-red-500 rounded-lg p-3">
+          <p className="text-red-400 text-sm text-center">
+            {errorMsg}
+          </p>
+        </div>
       )}
 
-      <input
-        className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
-        type="email"
-        placeholder="Enter Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <form onSubmit={handleLogin} className="flex flex-col gap-4">
 
-      <input
-        className="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-700 outline-none focus:ring-2 focus:ring-blue-500"
-        type="password"
-        placeholder="Enter Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <input
+          type="email"
+          placeholder="Email Address"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white"
+        />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-lg font-semibold text-white disabled:opacity-50"
-      >
-        {loading ? "Logging in..." : "Login"}
-      </button>
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 text-white"
+          />
 
-      <p className="text-center text-gray-400">
-        Don't have an account?{" "}
-        <a
-          href="/auth/signup"
-          className="text-blue-400 hover:underline"
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-3 text-sm text-zinc-400"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-white text-black font-semibold rounded-xl p-3"
         >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
+
+      <p className="text-center text-zinc-400">
+        Don't have an account?{" "}
+        <Link href="/auth/signup" className="text-white font-semibold">
           Sign Up
-        </a>
+        </Link>
       </p>
-    </form>
+    </div>
   );
 }
