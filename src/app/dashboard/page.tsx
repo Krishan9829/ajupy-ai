@@ -24,9 +24,8 @@ export default function DashboardPage() {
   const checkSession = async () => {
     const { data } = await supabase.auth.getSession();
 
-    if (data.session?.user) {
-      setUser(data.session.user);
-    }
+    setUser(data.session?.user || null);
+
 
     setLoading(false);
   };
@@ -40,7 +39,8 @@ export default function DashboardPage() {
   });
 
   return () => subscription.unsubscribe();
-}, []); // ✅ ONLY THIS (NO [router]) 
+}, []);  
+
   // 🔥 LOGOUT
   async function handleLogout() {
     const supabase = getSupabase();
