@@ -37,8 +37,7 @@ export default function DashboardPage() {
     };
 
     checkAuth();
-  }, []);
-  
+  }, [router]);
 
   // 🔥 LOGOUT FUNCTION
   async function handleLogout() {

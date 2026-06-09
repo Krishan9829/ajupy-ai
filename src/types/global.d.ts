@@ -1,8 +1,12 @@
-declare var process: {
-  env: {
+// ✅ CSS support
+declare module "*.css";
+
+// ✅ ENV types (correct way)
+declare namespace NodeJS {
+  interface ProcessEnv {
     NEXT_PUBLIC_SUPABASE_URL: string;
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: string;
     OPENAI_API_KEY: string;
     SUPABASE_SERVICE_ROLE_KEY: string;
-  };
-};
+  }
+}
