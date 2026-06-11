@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSupabase } from "../../lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 const modules = [
   { title: "Saree AI", path: "/saree-ai", icon: "👗" },
@@ -15,38 +17,57 @@ const modules = [
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [credits, setCredits] = useState(100);
+  const [user, setUser] = useState<User | null>(null);
+  const [credits] = useState(100);
+
+  const router = useRouter();
 
   useEffect(() => {
-  const supabase = getSupabase();
+    const supabase = getSupabase();
 
-  const checkSession = async () => {
-    const { data } = await supabase.auth.getSession();
+    // 🔥 GET SESSION SAFELY
+    const checkSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
 
-    setUser(data.session?.user || null);
+      if (error) {
+        console.log("Session Error:", error);
+        setUser(null);
+      } else {
+        setUser(data?.session?.user ?? null);
+      }
 
+      setLoading(false);
+    };
 
-    setLoading(false);
-  };
+    checkSession();
 
-  checkSession();
+    // 🔄 AUTH STATE LISTENER
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => {
-    setUser(session?.user || null);
-  });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
-  return () => subscription.unsubscribe();
-}, []);  
+  // 🚀 REDIRECT FIX (NO LOOP)
+  useEffect(() => {
+    if (loading) return;
+
+    if (!user) {
+      router.replace("/auth"); // 👈 replace use karo (push nahi)
+    }
+  }, [user, loading, router]);
 
   // 🔥 LOGOUT
-  async function handleLogout() {
+  const handleLogout = async () => {
     const supabase = getSupabase();
     await supabase.auth.signOut();
-    setUser(null);
-  }
+    router.replace("/auth");
+  };
 
   // ⏳ LOADING SCREEN
   if (loading) {
@@ -57,20 +78,8 @@ export default function DashboardPage() {
     );
   }
 
-  // ❌ NOT LOGGED IN UI (NO AUTO REDIRECT)
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-        <h2 className="text-2xl mb-4">🔒 Login Required</h2>
-
-        <Link href="/auth">
-          <button className="px-6 py-3 bg-blue-600 rounded-xl hover:bg-blue-700">
-            Go to Login
-          </button>
-        </Link>
-      </div>
-    );
-  }
+  // ❗ USER NA HO TO KUCH MAT DIKHAO (REDIRECT HO RAHA HAI)
+  if (!user) return null;
 
   // ✅ DASHBOARD UI
   return (
@@ -78,7 +87,6 @@ export default function DashboardPage() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
-
         <div>
           <h1 className="text-5xl font-bold">🚀 AJUPY AI Dashboard</h1>
 
@@ -87,7 +95,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="text-green-400 mt-3 text-sm">
-            Logged in as: {user?.email}
+            Logged in as: {user.email ?? "No Email"}
           </p>
         </div>
 
@@ -107,7 +115,6 @@ export default function DashboardPage() {
 
       {/* STATS */}
       <div className="grid md:grid-cols-3 gap-4 mt-10">
-
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
           <p className="text-zinc-400 text-sm">Total Generations</p>
           <h2 className="text-2xl font-bold mt-2">24</h2>
@@ -122,7 +129,6 @@ export default function DashboardPage() {
           <p className="text-zinc-400 text-sm">Active Model</p>
           <h2 className="text-2xl font-bold mt-2">FLUX Pro</h2>
         </div>
-
       </div>
 
       {/* MODULES */}
