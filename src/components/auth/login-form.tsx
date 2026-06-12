@@ -19,34 +19,27 @@ export default function LoginForm() {
     if (loading) return;
 
     const supabase = getSupabase();
-
     setErrorMsg("");
 
     if (!email || !password) {
       setErrorMsg("Please fill all fields.");
       return;
     }
+
     try {
       setLoading(true);
 
-      const { data, error } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         setErrorMsg(error.message);
         return;
       }
 
-      // ✅ Step 1: ensure session is updated
-      await supabase.auth.getSession();
-
-      // ✅ Step 2: force refresh (IMPORTANT 🔥)
-      router.refresh();
-
-      // ✅ Step 3: redirect
+      // 🔥 IMPORTANT FIX (NO REFRESH LOOP)
       router.replace("/dashboard");
 
     } catch (err) {
