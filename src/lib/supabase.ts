@@ -20,3 +20,6 @@ export const supabase =
 if (process.env.NODE_ENV !== "production") {
   globalForSupabase.supabase = supabase;
 }
+
+// ✅ ADD THIS
+export const getSupabase = () => supabase;
