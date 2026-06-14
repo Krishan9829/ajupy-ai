@@ -1,12 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
 
-export const getSupabaseAdmin = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !key) {
-    throw new Error("Missing Supabase Admin ENV");
-  }
+if (!url || !serviceKey) {
+  throw new Error("Missing Supabase admin env variables");
+}
 
-  return createClient(url, key);
-};
+// IMPORTANT: admin client (server only)
+export const supabaseAdmin = createClient(url, serviceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});

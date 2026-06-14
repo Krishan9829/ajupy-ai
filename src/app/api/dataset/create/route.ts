@@ -1,11 +1,9 @@
-import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const supabaseAdmin = getSupabaseAdmin();
-
     const { user_id, name } = await req.json();
 
     const { data, error } = await supabaseAdmin
