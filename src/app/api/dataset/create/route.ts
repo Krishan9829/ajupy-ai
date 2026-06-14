@@ -4,15 +4,51 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { user_id, name } = await req.json();
+    const body = await req.json();
+
+    const user_id = body?.user_id;
+    const name = body?.name;
+
+    // validation (important upgrade)
+    if (!user_id || !name) {
+      return Response.json(
+        { error: "user_id and name are required" },
+        { status: 400 }
+      );
+    }
 
     const { data, error } = await supabaseAdmin
       .from("datasets")
-      .insert([{ user_id, name }])
+      .insert([
+        {
+          user_id,
+          name,
+          created_at: new Date().toISOString(),
+        },
+      ])
       .select();
 
-    return Response.json({ data, error });
+    if (error) {
+      return Response.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    return Response.json(
+      {
+        success: true,
+        data,
+      },
+      { status: 200 }
+    );
   } catch (err: any) {
-    return Response.json({ error: err.message }, { status: 500 });
+    return Response.json(
+      {
+        success: false,
+        error: err?.message || "Internal Server Error",
+      },
+      { status: 500 }
+    );
   }
 }
