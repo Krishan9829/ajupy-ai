@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSupabase } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -17,8 +17,7 @@ export default function LoginForm() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
-
-    const supabase = getSupabase();
+    
     setErrorMsg("");
 
     if (!email || !password) {
