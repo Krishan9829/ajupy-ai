@@ -22,36 +22,44 @@ export default function DashboardPage() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    const supabase = getSupabase();
+ useEffect(() => {
+  const supabase = getSupabase();
 
-    // 🔥 BETTER SESSION METHOD
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
+  const initUser = async () => {
+    // ✅ STEP 1: get session first
+    const { data: sessionData } = await supabase.auth.getSession();
 
-      setUser(data?.user ?? null);
+    if (sessionData?.session?.user) {
+      setUser(sessionData.session.user);
       setLoading(false);
-    };
-
-    checkUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // 🚀 REDIRECT FIX
-  useEffect(() => {
-    if (loading) return;
-
-    if (!user) {
-      router.replace("/auth");
+      return;
     }
-  }, [user, loading, router]);
+
+    // ✅ STEP 2: fallback
+    const { data } = await supabase.auth.getUser();
+    setUser(data?.user ?? null);
+    setLoading(false);
+  };
+
+  initUser();
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
+
+useEffect(() => {
+  if (loading) return;
+
+  // ✅ Only redirect AFTER loading complete
+  if (!user) {
+    router.replace("/login"); // 🔥 change /auth → /login
+  }
+}, [user, loading, router]);
 
   // ⏳ LOADING
   if (loading) {
